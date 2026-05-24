@@ -32,6 +32,12 @@ export default function Preloader() {
     // @ts-ignore
     window.__SEQUENCE_IMAGES__ = [];
     
+    // Safety fallback: if network is extremely slow or an image hangs, force complete after 10s
+    const fallbackTimeout = setTimeout(() => {
+      setProgress(100);
+      setIsLoading(false);
+    }, 10000);
+
     let loadedCount = 0;
     const totalFrames = 91;
     const pad = (num: number) => num.toString().padStart(3, "0");
@@ -41,8 +47,9 @@ export default function Preloader() {
       
       const handleLoad = () => {
         loadedCount++;
+        // Don't go backwards if the fallback already triggered
+        setProgress((prev) => Math.max(prev, Math.floor((loadedCount / totalFrames) * 100)));
         const currentProgress = Math.floor((loadedCount / totalFrames) * 100);
-        setProgress(currentProgress);
 
         // Cycle text based on real loading intervals
         if (currentProgress < 25) setTextIndex(0);
@@ -51,6 +58,7 @@ export default function Preloader() {
         else setTextIndex(3);
 
         if (loadedCount === totalFrames) {
+          clearTimeout(fallbackTimeout);
           setTimeout(() => {
             setIsLoading(false);
           }, 600); // Give it a slight beat at 100% before dismissing
@@ -94,7 +102,7 @@ export default function Preloader() {
 
           {/* Razor-thin Loading Bar */}
           <div 
-            className="absolute bottom-0 left-0 h-[2px] bg-[#10b981] origin-left" 
+            className="absolute bottom-0 left-0 h-[2px] bg-white origin-left" 
             style={{ width: `${progress}%`, transition: 'width 0.1s ease-out' }} 
           />
         </motion.div>
