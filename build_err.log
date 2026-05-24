@@ -1,0 +1,99 @@
+﻿
+> scrollytelling-portfolio@0.1.0 build
+> next build
+
+  ▲ Next.js 14.2.3
+
+   Creating an optimized production build ...
+node.exe : Failed to 
+compile.
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~
+    + CategoryInfo         
+     : NotSpecified: (Fai  
+  led to compile.:String   
+ ) [], RemoteException
+    + FullyQualifiedErrorI 
+   d : NativeCommandError
+ 
+
+src\app\layout.tsx
+An error occurred in 
+`next/font`.
+
+Error: Cannot find module 
+'autoprefixer'
+Require stack:
+- C:\Users\pranj\Downloads\
+FD\node_modules\next\dist\b
+uild\webpack\config\blocks\
+css\plugins.js
+- C:\Users\pranj\Downloads\
+FD\node_modules\next\dist\b
+uild\webpack\config\blocks\
+css\index.js
+- C:\Users\pranj\Downloads\
+FD\node_modules\next\dist\b
+uild\webpack\config\index.j
+s
+- C:\Users\pranj\Downloads\
+FD\node_modules\next\dist\b
+uild\webpack-config.js
+- C:\Users\pranj\Downloads\
+FD\node_modules\next\dist\b
+uild\webpack-build\impl.js
+- C:\Users\pranj\Downloads\
+FD\node_modules\next\dist\c
+ompiled\jest-worker\process
+Child.js
+    at Module.<anonymous> (
+node:internal/modules/cjs/l
+oader:1421:15)
+    at C:\Users\pranj\Downl
+oads\FD\node_modules\next\d
+ist\server\require-hook.js:
+55:36
+    at require.resolve (nod
+e:internal/modules/helpers:
+163:19)
+    at loadPlugin (C:\Users
+\pranj\Downloads\FD\node_mo
+dules\next\dist\build\webpa
+ck\config\blocks\css\plugin
+s.js:49:32)
+    at C:\Users\pranj\Downl
+oads\FD\node_modules\next\d
+ist\build\webpack\config\bl
+ocks\css\plugins.js:157:56
+    at Array.map 
+(<anonymous>)
+    at getPostCssPlugins (C
+:\Users\pranj\Downloads\FD\
+node_modules\next\dist\buil
+d\webpack\config\blocks\css
+\plugins.js:157:47)
+    at async C:\Users\pranj
+\Downloads\FD\node_modules\
+next\dist\build\webpack\con
+fig\blocks\css\index.js:124
+:36
+    at async C:\Users\pranj
+\Downloads\FD\node_modules\
+next\dist\build\webpack\loa
+ders\next-font-loader\index
+.js:86:33
+    at async 
+Span.traceAsyncFn (C:\Users
+\pranj\Downloads\FD\node_mo
+dules\next\dist\trace\trace
+.js:154:20)
+
+
+> Build failed because of 
+webpack errors
