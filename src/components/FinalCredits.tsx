@@ -208,7 +208,7 @@ export default function FinalCredits() {
         {/* The Creator Credit (Easter Egg) */}
         <div className="absolute bottom-6 left-0 right-0 text-center pointer-events-none">
           <p className="text-[10px] tracking-[0.3em] text-white/30 uppercase font-mono animate-pulse">
-            // ARCHITECTURE, CODE, AND CREATIVE DIRECTION BY PRANJAY RATHORE //
+            {"// ARCHITECTURE, CODE, AND CREATIVE DIRECTION BY PRANJAY RATHORE //"}
           </p>
         </div>
       </section>
