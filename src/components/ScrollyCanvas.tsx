@@ -34,15 +34,19 @@ export default function ScrollyCanvas() {
 
   // Preload images
   useEffect(() => {
-    const loadedImages: HTMLImageElement[] = [];
-
-    for (let i = 0; i < FRAME_COUNT; i++) {
-      const img = new Image();
-      img.src = `${URL_PREFIX}${pad(i, 3)}${URL_SUFFIX}`;
-      loadedImages.push(img);
+    // @ts-ignore
+    if (typeof window !== 'undefined' && window.__SEQUENCE_IMAGES__ && window.__SEQUENCE_IMAGES__.length === FRAME_COUNT) {
+      // @ts-ignore
+      setImages(window.__SEQUENCE_IMAGES__);
+    } else {
+      const loadedImages: HTMLImageElement[] = [];
+      for (let i = 0; i < FRAME_COUNT; i++) {
+        const img = new Image();
+        img.src = `${URL_PREFIX}${pad(i, 3)}${URL_SUFFIX}`;
+        loadedImages.push(img);
+      }
+      setImages(loadedImages);
     }
-    
-    setImages(loadedImages);
   }, []);
 
   // Draw setup & scroll mapping

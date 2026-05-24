@@ -16,36 +16,54 @@ export default function Preloader() {
   const [textIndex, setTextIndex] = useState(0);
 
   useEffect(() => {
-    // Easing simulation: fast -> slow -> fast snap
-    let start = Date.now();
-    const duration = 2800; // 2.8 seconds
+    if (typeof window === 'undefined') return;
 
-    const updateProgress = () => {
-      const elapsed = Date.now() - start;
-      const rawT = Math.min(elapsed / duration, 1);
+    // We attach images to the window object so ScrollyCanvas can instantly grab them
+    // @ts-ignore
+    window.__SEQUENCE_IMAGES__ = window.__SEQUENCE_IMAGES__ || [];
+    
+    // @ts-ignore
+    if (window.__SEQUENCE_IMAGES__.length === 91 && window.__SEQUENCE_IMAGES__[90].complete) {
+      setProgress(100);
+      setIsLoading(false);
+      return;
+    }
+
+    // @ts-ignore
+    window.__SEQUENCE_IMAGES__ = [];
+    
+    let loadedCount = 0;
+    const totalFrames = 91;
+    const pad = (num: number) => num.toString().padStart(3, "0");
+
+    for (let i = 0; i < totalFrames; i++) {
+      const img = new Image();
       
-      // easeInOutCubic equivalent for a cinematic feel
-      const t = rawT < 0.5 ? 4 * rawT * rawT * rawT : 1 - Math.pow(-2 * rawT + 2, 3) / 2;
-      
-      const currentProgress = Math.floor(t * 100);
-      setProgress(currentProgress);
+      const handleLoad = () => {
+        loadedCount++;
+        const currentProgress = Math.floor((loadedCount / totalFrames) * 100);
+        setProgress(currentProgress);
 
-      // Cycle text based on progress intervals
-      if (currentProgress < 25) setTextIndex(0);
-      else if (currentProgress < 60) setTextIndex(1);
-      else if (currentProgress < 90) setTextIndex(2);
-      else setTextIndex(3);
+        // Cycle text based on real loading intervals
+        if (currentProgress < 25) setTextIndex(0);
+        else if (currentProgress < 60) setTextIndex(1);
+        else if (currentProgress < 90) setTextIndex(2);
+        else setTextIndex(3);
 
-      if (rawT < 1) {
-        requestAnimationFrame(updateProgress);
-      } else {
-        setTimeout(() => {
-          setIsLoading(false);
-        }, 400);
-      }
-    };
+        if (loadedCount === totalFrames) {
+          setTimeout(() => {
+            setIsLoading(false);
+          }, 600); // Give it a slight beat at 100% before dismissing
+        }
+      };
 
-    requestAnimationFrame(updateProgress);
+      img.onload = handleLoad;
+      img.onerror = handleLoad; // Ensure we don't infinitely hang if 1 image fails
+
+      img.src = `/sequence/frame_${pad(i)}_delay-0.07s.png`;
+      // @ts-ignore
+      window.__SEQUENCE_IMAGES__.push(img);
+    }
   }, []);
 
   // Format progress strictly as 00% to 100%
