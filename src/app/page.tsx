@@ -5,10 +5,12 @@ import GullyLabsVideo from "@/components/GullyLabsVideo";
 import Ben10Statement from "@/components/Ben10Statement";
 import Ben10Reel from "@/components/Ben10Reel";
 import FinalCredits from "@/components/FinalCredits";
+import Preloader from "@/components/Preloader";
 
 export default function Home() {
   return (
     <main className="relative bg-[#050505] min-h-screen">
+      <Preloader />
       <CustomCursor />
       
       {/* Scroll-animated canvas + text overlays sequence */}
