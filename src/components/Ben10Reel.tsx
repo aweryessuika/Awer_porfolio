@@ -13,13 +13,23 @@ export default function Ben10Reel() {
     if (!videoRef.current) return;
 
     if (isInView) {
+      // Aggressively set default state to unmuted before playing
       videoRef.current.muted = false;
-      videoRef.current.play().catch(() => {});
       setIsMuted(false);
+      
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          // If browser blocks the play (Autoplay Policy), force mute and play anyway
+          if (videoRef.current) {
+            videoRef.current.muted = true;
+            setIsMuted(true);
+            videoRef.current.play().catch(() => {});
+          }
+        });
+      }
     } else {
       videoRef.current.pause();
-      videoRef.current.muted = true;
-      setIsMuted(true);
     }
   }, [isInView]);
 
@@ -66,7 +76,7 @@ export default function Ben10Reel() {
           {/* Video Player */}
           <video
             ref={videoRef}
-            src="/I am not Ben 10..mp4"
+            src="/ben10.mp4"
             className="w-full h-full object-cover rounded-[2.5rem] bg-[#0a0a0a]"
             loop
             playsInline
