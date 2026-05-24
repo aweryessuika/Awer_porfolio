@@ -42,10 +42,6 @@ export default function ScrollyCanvas() {
       loadedImages.push(img);
     }
     
-    loadedImages[0].onload = () => {
-      setImages([...loadedImages]);
-    };
-    
     setImages(loadedImages);
   }, []);
 
@@ -57,17 +53,30 @@ export default function ScrollyCanvas() {
     const ctx = canvas.getContext("2d", { alpha: false });
     if (!ctx) return;
 
+    let currentFrame = 0;
+
     // Responsive Canvas Resizing
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
-      renderFrame(Math.min(FRAME_COUNT - 1, Math.floor(smoothProgress.get() * FRAME_COUNT))); 
+      renderFrame(currentFrame); 
     };
     
     // Draw based on object-fit: cover logic
     const renderFrame = (index: number) => {
       const img = images[index];
-      if (!img || !img.complete) return;
+      if (!img) return;
+      
+      // If the image hasn't downloaded yet, tell it to draw itself once it finishes
+      // ONLY if it's still the active frame.
+      if (!img.complete) {
+        img.onload = () => {
+          if (currentFrame === index) {
+            renderFrame(index);
+          }
+        };
+        return;
+      }
       
       const canvasRatio = canvas.width / canvas.height;
       const imgRatio = img.width / img.height;
@@ -91,15 +100,21 @@ export default function ScrollyCanvas() {
     };
 
     window.addEventListener("resize", resizeCanvas);
-    resizeCanvas(); // Draw initial
 
     const unsubscribe = smoothProgress.on("change", (latest) => {
-      const frameIndex = Math.min(
+      currentFrame = Math.min(
         FRAME_COUNT - 1,
         Math.floor(latest * FRAME_COUNT)
       );
-      requestAnimationFrame(() => renderFrame(frameIndex));
+      requestAnimationFrame(() => renderFrame(currentFrame));
     });
+
+    // Initial sync
+    currentFrame = Math.min(
+      FRAME_COUNT - 1,
+      Math.floor(smoothProgress.get() * FRAME_COUNT)
+    );
+    resizeCanvas();
 
     return () => {
       window.removeEventListener("resize", resizeCanvas);
