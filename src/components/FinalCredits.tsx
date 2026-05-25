@@ -65,7 +65,7 @@ export default function FinalCredits() {
         {/* Header (Top Row) */}
         <div className="border-b border-white/20 p-6 md:p-8 flex items-center flex-shrink-0">
           <h2 className="text-[10vw] md:text-8xl font-black uppercase tracking-tighter leading-none">
-            LET'S CONNECT
+            LET&apos;S CONNECT
           </h2>
         </div>
 
