@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const loadingTexts = [
-  "INITIALIZING NEURAL NETWORKS...",
+  "INITIALIZING NEURAL NETS...",
   "BUFFERING SCROLL CANVAS...",
   "RENDERING VEO 3 ASSETS...",
   "AWAITING DIRECTOR CUE..."
@@ -16,62 +16,60 @@ export default function Preloader() {
   const [textIndex, setTextIndex] = useState(0);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    let animationFrameId: number;
+    let startTime = Date.now();
+    let isCurrentlyPaused = false;
+    let pauseStartTime = 0;
+    const duration = 3000; // Total duration ~ 3s
 
-    // We attach images to the window object so ScrollyCanvas can instantly grab them
-    // @ts-ignore
-    window.__SEQUENCE_IMAGES__ = window.__SEQUENCE_IMAGES__ || [];
-    
-    // @ts-ignore
-    if (window.__SEQUENCE_IMAGES__.length === 91 && window.__SEQUENCE_IMAGES__[90].complete) {
-      setProgress(100);
-      setIsLoading(false);
-      return;
-    }
+    const updateProgress = () => {
+      const now = Date.now();
+      let elapsed = now - startTime;
 
-    // @ts-ignore
-    window.__SEQUENCE_IMAGES__ = [];
-    
-    // Safety fallback: if network is extremely slow or an image hangs, force complete after 10s
-    const fallbackTimeout = setTimeout(() => {
-      setProgress(100);
-      setIsLoading(false);
-    }, 10000);
-
-    let loadedCount = 0;
-    const totalFrames = 91;
-    const pad = (num: number) => num.toString().padStart(3, "0");
-
-    for (let i = 0; i < totalFrames; i++) {
-      const img = new Image();
-      
-      const handleLoad = () => {
-        loadedCount++;
-        // Don't go backwards if the fallback already triggered
-        setProgress((prev) => Math.max(prev, Math.floor((loadedCount / totalFrames) * 100)));
-        const currentProgress = Math.floor((loadedCount / totalFrames) * 100);
-
-        // Cycle text based on real loading intervals
-        if (currentProgress < 25) setTextIndex(0);
-        else if (currentProgress < 60) setTextIndex(1);
-        else if (currentProgress < 90) setTextIndex(2);
-        else setTextIndex(3);
-
-        if (loadedCount === totalFrames) {
-          clearTimeout(fallbackTimeout);
-          setTimeout(() => {
-            setIsLoading(false);
-          }, 600); // Give it a slight beat at 100% before dismissing
+      if (isCurrentlyPaused) {
+        if (now - pauseStartTime >= 800) {
+          isCurrentlyPaused = false;
+          // Shift start time to account for the pause duration
+          startTime += 800;
+          elapsed = now - startTime;
+        } else {
+          animationFrameId = requestAnimationFrame(updateProgress);
+          return;
         }
-      };
+      }
 
-      img.onload = handleLoad;
-      img.onerror = handleLoad; // Ensure we don't infinitely hang if 1 image fails
+      let rawProgress = Math.min((elapsed / duration) * 100, 100);
+      
+      // Fast start easing (cubic easeOut)
+      let currentProgress = (1 - Math.pow(1 - rawProgress / 100, 3)) * 100;
 
-      img.src = `/sequence/frame_${pad(i)}_delay-0.07s.png`;
-      // @ts-ignore
-      window.__SEQUENCE_IMAGES__.push(img);
-    }
+      // Trigger pause around 45%
+      if (currentProgress >= 45 && currentProgress < 50 && !isCurrentlyPaused && pauseStartTime === 0) {
+        isCurrentlyPaused = true;
+        pauseStartTime = now;
+        animationFrameId = requestAnimationFrame(updateProgress);
+        return;
+      }
+
+      setProgress(Math.floor(currentProgress));
+
+      if (currentProgress < 25) setTextIndex(0);
+      else if (currentProgress < 50) setTextIndex(1);
+      else if (currentProgress < 75) setTextIndex(2);
+      else setTextIndex(3);
+
+      if (currentProgress < 100) {
+        animationFrameId = requestAnimationFrame(updateProgress);
+      } else {
+        setProgress(100);
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 600); // Slight delay at 100% before exit
+      }
+    };
+
+    animationFrameId = requestAnimationFrame(updateProgress);
+    return () => cancelAnimationFrame(animationFrameId);
   }, []);
 
   // Format progress strictly as 00% to 100%
@@ -93,7 +91,7 @@ export default function Preloader() {
           </div>
 
           {/* Massive Counter */}
-          <div className="font-sans font-black text-8xl md:text-[9rem] tracking-tighter tabular-nums z-10 text-white mt-12">
+          <div className="font-sans font-black text-9xl md:text-[12rem] tracking-tighter tabular-nums z-10 text-white mt-12 leading-none">
             {formattedProgress}%
           </div>
 

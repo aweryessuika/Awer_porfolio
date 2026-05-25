@@ -1,217 +1,185 @@
 "use client";
 
-import React from "react";
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import React, { useRef, useState, useEffect } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { Environment } from "@react-three/drei";
+import * as THREE from "three";
 
-export default function FinalCredits() {
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
-    const x = (e.clientX - left - width / 2) / (width / 2);
-    const y = (e.clientY - top - height / 2) / (height / 2);
-    mouseX.set(x);
-    mouseY.set(y);
-  };
-
-  const smoothX = useSpring(mouseX, { damping: 20, stiffness: 100, mass: 0.5 });
-  const smoothY = useSpring(mouseY, { damping: 20, stiffness: 100, mass: 0.5 });
-
-  const rotateX = useTransform(smoothY, [-1, 1], [30, -30]);
-  const rotateY = useTransform(smoothX, [-1, 1], [-30, 30]);
-
-  const xOffset = useTransform(smoothX, [-1, 1], [-20, 20]);
-  const yOffset = useTransform(smoothY, [-1, 1], [-20, 20]);
-
-  const skills = [
-    "Midjourney",
-    "Google Veo 3",
-    "Sora 2",
-    "Generative AI",
-    "AI Directing",
-    "Prompt Engineering",
-    "DaVinci Resolve"
-  ];
-
-  const links = [
-    { label: "INITIATE EMAIL", href: "mailto:your.email@gmail.com" },
-    { label: "INSTAGRAM", href: "https://instagram.com/yourhandle" },
-    { label: "+91 COMM LINK", href: "tel:+910000000000" }
-  ];
+function MetallicKnot() {
+  const meshRef = useRef<THREE.Mesh>(null);
+  const [hovered, setHovered] = useState(false);
+  
+  useFrame((state, delta) => {
+    if (meshRef.current) {
+      meshRef.current.rotation.x += delta * (hovered ? 0.8 : 0.4);
+      meshRef.current.rotation.y += delta * (hovered ? 1.0 : 0.5);
+      
+      const targetScale = hovered ? 1.1 : 1.0;
+      meshRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.1);
+    }
+  });
 
   return (
-    <>
-      <style dangerouslySetInnerHTML={{__html: `
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;700;800&display=swap');
-        .font-syne { font-family: 'Syne', sans-serif; }
-        .font-playfair { font-family: 'Playfair Display', serif; }
+    <mesh 
+      ref={meshRef} 
+      onPointerOver={() => setHovered(true)}
+      onPointerOut={() => setHovered(false)}
+    >
+      <torusKnotGeometry args={[1.2, 0.4, 256, 64]} />
+      <meshStandardMaterial 
+        color="#ffffff" 
+        metalness={1} 
+        roughness={0.1} 
+        envMapIntensity={2.5} 
+      />
+    </mesh>
+  );
+}
+
+export default function FinalCredits() {
+  const [timeString, setTimeString] = useState("22:26:00");
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      setTimeString(
+        now.toLocaleTimeString("en-IN", {
+          timeZone: "Asia/Kolkata",
+          hour12: false,
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        })
+      );
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <section className="h-screen w-full bg-[#050505] p-6 flex flex-col text-white font-sans select-none">
+      {/* Main Box */}
+      <div className="border border-white/20 w-full h-full flex flex-col relative overflow-hidden">
         
-        @keyframes gradientMesh {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-        .animate-gradient-mesh {
-          background-size: 400% 400%;
-          animation: gradientMesh 15s ease infinite;
-        }
-      `}} />
+        {/* Header (Top Row) */}
+        <div className="border-b border-white/20 p-6 md:p-8 flex items-center flex-shrink-0">
+          <h2 className="text-[10vw] md:text-8xl font-black uppercase tracking-tighter leading-none">
+            LET'S CONNECT
+          </h2>
+        </div>
 
-      <section className="h-screen w-full bg-[#050505] relative overflow-hidden flex items-center justify-center p-4 md:p-8">
-        {/* Background ambient glow */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.02)_0%,transparent_70%)] pointer-events-none" />
-
-        <motion.div 
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
-          transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
-          className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-16 max-w-[90rem] mx-auto items-center relative z-10 w-full h-full max-h-[900px]"
-        >
+        {/* Middle Row (4 Columns) */}
+        <div className="grid grid-cols-2 md:grid-cols-4 border-b border-white/20 flex-shrink-0">
           
-          {/* Left Column: The 100x "Awer Core" */}
-          <div 
-            className="w-full h-full relative flex items-center justify-center perspective-[1000px]"
-            onMouseMove={handleMouseMove}
-            onMouseLeave={() => {
-              mouseX.set(0);
-              mouseY.set(0);
-            }}
-          >
-            <motion.div 
-              style={{ 
-                rotateX, 
-                rotateY,
-                x: xOffset,
-                y: yOffset
-              }}
-              className="relative w-[70%] max-w-[450px] aspect-square [transform-style:preserve-3d] flex items-center justify-center"
-            >
-              {/* Vibrant Liquid Mesh Orb */}
-              <motion.div
-                animate={{
-                  borderRadius: [
-                    "60% 40% 30% 70% / 60% 30% 70% 40%",
-                    "30% 70% 70% 30% / 30% 30% 70% 70%",
-                    "50% 50% 20% 80% / 25% 80% 20% 75%",
-                    "60% 40% 30% 70% / 60% 30% 70% 40%"
-                  ],
-                }}
-                transition={{
-                  duration: 8,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-                className="absolute inset-0 w-full h-full bg-[linear-gradient(-45deg,#6b21a8,#10b981,#1e3a8a,#000000,#4c1d95)] animate-gradient-mesh shadow-[0_0_120px_rgba(16,185,129,0.25)] opacity-90 mix-blend-screen"
-              />
-              {/* Inner Iridescent Core */}
-              <motion.div
-                animate={{
-                  borderRadius: [
-                    "40% 60% 70% 30% / 40% 70% 30% 60%",
-                    "70% 30% 30% 70% / 70% 70% 30% 30%",
-                    "30% 70% 50% 50% / 50% 30% 70% 50%",
-                    "40% 60% 70% 30% / 40% 70% 30% 60%"
-                  ],
-                  rotate: [0, -90, -180, -360]
-                }}
-                transition={{
-                  duration: 12,
-                  repeat: Infinity,
-                  ease: "linear"
-                }}
-                className="absolute inset-[15%] w-[70%] h-[70%] border-[1px] border-[#10b981]/40 bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.1)_0%,transparent_100%)] backdrop-blur-md"
-              />
-              {/* Outer Energy Ring */}
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                className="absolute w-[115%] h-[115%] rounded-full border border-white/5 border-t-[#10b981]/50 border-b-[#6b21a8]/50 mix-blend-screen"
-              />
-            </motion.div>
+          {/* Cell 1 (NAME) */}
+          <div className="border-r border-white/20 flex flex-col border-b md:border-b-0">
+            <div className="text-[10px] text-white/40 uppercase p-4 border-b border-white/10 tracking-[0.2em]">
+              NAME -{">"}
+            </div>
+            <div className="text-xl font-bold p-6">
+              ★ Pranjay Rathore
+            </div>
           </div>
 
-          {/* Right Column: The Director's Breakdown */}
-          <div className="flex flex-col justify-center h-full">
-            <h1 className="text-5xl md:text-7xl xl:text-8xl tracking-tighter text-white font-black font-syne uppercase leading-[0.9]">
-              PRANJAY RATHORE
-            </h1>
-            <h2 className="italic font-playfair text-lg md:text-xl text-[#10b981] mt-3">
-              AI FILMMAKER & CONTENT STRATEGIST.
-            </h2>
-            
-            <p className="text-sm md:text-base text-white/60 leading-relaxed max-w-lg mt-6 font-sans">
-              Curious and passionate. I’ve always been interested in how visuals can shape the way people feel and think. Over time, that curiosity led me to generative AI and content strategy—a space where technical execution meets raw storytelling. Through this portfolio, I aim to show my approach as a director who values clarity, edge, and meaning in every frame.
-            </p>
+          {/* Cell 2 (EMAIL) */}
+          <div className="md:border-r border-white/20 flex flex-col border-b md:border-b-0">
+            <div className="text-[10px] text-white/40 uppercase p-4 border-b border-white/10 tracking-[0.2em]">
+              EMAIL -{">"}
+            </div>
+            <a href="mailto:awer.mov@gmail.com" className="text-sm font-semibold p-6 block hover:text-white/50 transition-colors">
+              awer.mov@gmail.com
+            </a>
+          </div>
 
-            <div className="border-t border-white/10 mt-8 pt-8">
-              <p className="text-[10px] md:text-xs tracking-[0.2em] text-white/40 mb-4 uppercase font-syne">
-                THE ARSENAL // 2025
-              </p>
-              <div className="flex flex-wrap gap-2 md:gap-3">
-                {skills.map((skill) => (
-                  <div 
-                    key={skill} 
-                    className="px-3 md:px-4 py-1.5 md:py-2 bg-[#10b981]/5 border border-[#10b981]/30 rounded-full text-xs md:text-sm font-syne text-[#10b981] shadow-[0_0_15px_rgba(16,185,129,0.1)] backdrop-blur-md uppercase tracking-wide"
-                  >
-                    [ {skill} ]
-                  </div>
-                ))}
+          {/* Cell 3 (PHONE) */}
+          <div className="border-r border-white/20 flex flex-col">
+            <div className="text-[10px] text-white/40 uppercase p-4 border-b border-white/10 tracking-[0.2em]">
+              PHONE -{">"}
+            </div>
+            <a href="tel:+919109300253" className="text-sm font-semibold p-6 block hover:text-white/50 transition-colors">
+              +91 91093 00253
+            </a>
+          </div>
+
+          {/* Cell 4 (LOCATION) */}
+          <div className="flex flex-col">
+            <div className="text-[10px] text-white/40 uppercase p-4 border-b border-white/10 tracking-[0.2em]">
+              TARGET HUB -{">"}
+            </div>
+            <div className="p-6">
+              <span className="text-sm font-semibold block">Bangalore, India</span>
+              <span className="text-xs text-white/50 mt-1 block">Available for relocation / on-site</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Row (2 Columns) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 flex-grow overflow-hidden relative">
+          
+          {/* Left Cell (SYSTEM STATUS & AVAILABILITY) */}
+          <div className="border-b md:border-b-0 md:border-r border-white/20 flex flex-col justify-between p-0 z-10 bg-[#050505]">
+            <div className="text-[10px] text-white/40 uppercase p-4 border-b border-white/20 tracking-[0.2em]">
+              STATUS -{">"}
+            </div>
+            <div className="flex flex-col p-6 h-full">
+              {/* Item 1 */}
+              <div className="flex items-center">
+                <div className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse"></div>
+                <div className="text-sm font-bold tracking-widest text-white ml-3">
+                  OPEN FOR ROLES // Q3 2026
+                </div>
+              </div>
+              
+              {/* Item 2 */}
+              <div className="mt-6">
+                <div className="text-xs text-white/50 tracking-widest">
+                  CURRENT ACADEMIC BASE -{">"} VIT BHOPAL, IN
+                </div>
+                <div className="text-xs text-white/50 tracking-widest mt-1">
+                  IST // {timeString}
+                </div>
+              </div>
+
+              {/* Item 3 */}
+              <div className="text-[10px] text-white/30 tracking-[0.2em] uppercase mt-auto mb-4 border-t border-white/10 pt-4">
+                FOCUS: AI DIRECTING, GENERATIVE VIDEO, CONTENT STRATEGY
               </div>
             </div>
-
-            <div className="mt-8 flex flex-col gap-3 md:gap-5">
-              {links.map((link) => (
-                <motion.a
-                  key={link.label}
-                  href={link.href}
-                  whileHover="hover"
-                  initial="initial"
-                  className="text-3xl md:text-4xl xl:text-5xl font-black font-syne uppercase tracking-tighter text-white/40 flex items-center group transition-colors duration-300 w-max cursor-pointer"
-                >
-                  <motion.span 
-                    variants={{
-                      initial: { color: "rgba(255, 255, 255, 0.4)", x: 0 },
-                      hover: { color: "#10b981", x: 10 }
-                    }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
-                  >
-                    [
-                  </motion.span>
-                  <motion.span 
-                    variants={{
-                      initial: { color: "rgba(255, 255, 255, 0.4)", x: 0 },
-                      hover: { color: "#ffffff", x: 10 }
-                    }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
-                    className="mx-3 md:mx-4"
-                  >
-                    {link.label}
-                  </motion.span>
-                  <motion.span 
-                    variants={{
-                      initial: { color: "rgba(255, 255, 255, 0.4)", x: 0 },
-                      hover: { color: "#10b981", x: 10 }
-                    }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
-                  >
-                    ]
-                  </motion.span>
-                </motion.a>
-              ))}
-            </div>
           </div>
 
-        </motion.div>
+          {/* Right Cell (THE VISUAL CORE) */}
+          <div className="relative flex items-center justify-end overflow-hidden p-8 z-0 bg-[#050505]">
+            
+            {/* The Animation */}
+            <div className="absolute inset-0 w-full h-full">
+              <Canvas camera={{ position: [0, 0, 10], fov: 45 }}>
+                <ambientLight intensity={0.5} />
+                <directionalLight position={[10, 10, 10]} intensity={2} color="#ffffff" />
+                <directionalLight position={[-10, -10, -10]} intensity={1} color="#ffffff" />
+                <Environment preset="city" />
+                <MetallicKnot />
+              </Canvas>
+            </div>
 
-        {/* The Creator Credit (Easter Egg) */}
-        <div className="absolute bottom-6 left-0 right-0 text-center pointer-events-none">
-          <p className="text-[10px] tracking-[0.3em] text-white/30 uppercase font-mono animate-pulse">
-            {"// ARCHITECTURE, CODE, AND CREATIVE DIRECTION BY PRANJAY RATHORE //"}
-          </p>
+            {/* The Text */}
+            <div className="relative z-10 max-w-sm pointer-events-none mr-4">
+              <p className="font-serif italic text-3xl md:text-5xl text-white leading-tight drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)] text-right">
+                leveraging the Attention Economy
+              </p>
+            </div>
+
+            {/* Badge */}
+            <div className="absolute bottom-6 right-6 z-10 pointer-events-none">
+              <p className="text-[9px] uppercase tracking-widest text-white/40 bg-[#050505]/50 px-2 py-1 rounded backdrop-blur-sm">
+                DESIGNED & CODED BY PRANJAY RATHORE // PRECISION PROMPTING
+              </p>
+            </div>
+
+          </div>
         </div>
-      </section>
-    </>
+
+      </div>
+    </section>
   );
 }
