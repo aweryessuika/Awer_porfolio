@@ -1,37 +1,31 @@
-import CustomCursor from "@/components/CustomCursor";
-import ScrollyCanvas from "@/components/ScrollyCanvas";
-import Statement from "@/components/Statement";
-import GullyLabsVideo from "@/components/GullyLabsVideo";
-import Ben10Statement from "@/components/Ben10Statement";
-import Ben10Reel from "@/components/Ben10Reel";
-import FinalCredits from "@/components/FinalCredits";
+import SmoothScroll from "@/components/SmoothScroll";
 import Preloader from "@/components/Preloader";
+import Cursor from "@/components/Cursor";
+import Nav from "@/components/Nav";
+import Hero from "@/components/Hero";
+import Manifesto from "@/components/Manifesto";
+import Marquee from "@/components/Marquee";
+import WorkIndex from "@/components/work/WorkIndex";
+import ProjectGully from "@/components/work/ProjectGully";
+import ProjectBen10 from "@/components/work/ProjectBen10";
+import Contact from "@/components/contact/Contact";
 
 export default function Home() {
   return (
-    <main className="relative bg-[#050505] min-h-screen">
+    <>
+      <SmoothScroll />
       <Preloader />
-      <CustomCursor />
-      
-      {/* Scroll-animated canvas + text overlays sequence */}
-      <ScrollyCanvas />
-
-      <div className="relative -mt-[100vh] z-20">
-        {/* Massive typography statement */}
-        <Statement />
-
-        {/* High-end cinematic video reveal */}
-        <GullyLabsVideo />
-
-        {/* Inverted high-contrast typographic statement */}
-        <Ben10Statement />
-
-        {/* 3D phone reel */}
-        <Ben10Reel />
-
-        {/* Final cinematic outro section */}
-        <FinalCredits />
-      </div>
-    </main>
+      <Cursor />
+      <Nav />
+      <main className="relative">
+        <Hero />
+        <Manifesto />
+        <Marquee />
+        <WorkIndex />
+        <ProjectGully />
+        <ProjectBen10 />
+        <Contact />
+      </main>
+    </>
   );
 }

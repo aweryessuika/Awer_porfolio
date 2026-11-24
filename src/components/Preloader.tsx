@@ -1,110 +1,145 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import { gsap, prefersReducedMotion, toTimecode } from "@/lib/motion";
+import { FRAME_COUNT, onSequenceProgress, startSequenceLoad } from "@/lib/sequence";
+import { markIntroDone } from "@/lib/intro";
 
-const loadingTexts = [
-  "INITIALIZING NEURAL NETS...",
-  "BUFFERING SCROLL CANVAS...",
-  "RENDERING VEO 3 ASSETS...",
-  "AWAITING DIRECTOR CUE..."
-];
+const MIN_SHOW_MS = 1500;
+const MAX_WAIT_MS = 7000;
 
+/**
+ * Film-leader preloader. The counter tracks the real hero frame download
+ * (not a fake timer), with a floor so it never flashes and a ceiling so a slow
+ * connection never traps the visitor.
+ */
 export default function Preloader() {
-  const [progress, setProgress] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [textIndex, setTextIndex] = useState(0);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const countRef = useRef<HTMLSpanElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+  const framesRef = useRef<HTMLSpanElement>(null);
+  const tcRef = useRef<HTMLSpanElement>(null);
+  const [gone, setGone] = useState(false);
 
   useEffect(() => {
-    let animationFrameId: number;
-    let startTime = Date.now();
-    let isCurrentlyPaused = false;
-    let pauseStartTime = 0;
-    const duration = 3000; // Total duration ~ 3s
+    const root = rootRef.current;
+    if (!root) return;
 
-    const updateProgress = () => {
-      const now = Date.now();
-      let elapsed = now - startTime;
+    document.documentElement.classList.add("is-loading");
+    window.scrollTo(0, 0);
+    startSequenceLoad();
 
-      if (isCurrentlyPaused) {
-        if (now - pauseStartTime >= 800) {
-          isCurrentlyPaused = false;
-          // Shift start time to account for the pause duration
-          startTime += 800;
-          elapsed = now - startTime;
-        } else {
-          animationFrameId = requestAnimationFrame(updateProgress);
-          return;
-        }
+    const reduce = prefersReducedMotion();
+    const begin = performance.now();
+    let target = 0;
+    let shown = 0;
+    let exiting = false;
+    let raf = 0;
+    let exitTimeline: gsap.core.Timeline | null = null;
+
+    const offProgress = onSequenceProgress((loaded, total) => {
+      target = (loaded / total) * 100;
+      if (framesRef.current) {
+        framesRef.current.textContent = `${String(loaded).padStart(3, "0")}/${String(total).padStart(3, "0")}`;
       }
+    });
 
-      let rawProgress = Math.min((elapsed / duration) * 100, 100);
-      
-      // Fast start easing (cubic easeOut)
-      let currentProgress = (1 - Math.pow(1 - rawProgress / 100, 3)) * 100;
-
-      // Trigger pause around 45%
-      if (currentProgress >= 45 && currentProgress < 50 && !isCurrentlyPaused && pauseStartTime === 0) {
-        isCurrentlyPaused = true;
-        pauseStartTime = now;
-        animationFrameId = requestAnimationFrame(updateProgress);
-        return;
-      }
-
-      setProgress(Math.floor(currentProgress));
-
-      if (currentProgress < 25) setTextIndex(0);
-      else if (currentProgress < 50) setTextIndex(1);
-      else if (currentProgress < 75) setTextIndex(2);
-      else setTextIndex(3);
-
-      if (currentProgress < 100) {
-        animationFrameId = requestAnimationFrame(updateProgress);
-      } else {
-        setProgress(100);
-        setTimeout(() => {
-          setIsLoading(false);
-        }, 600); // Slight delay at 100% before exit
-      }
+    const finish = () => {
+      document.documentElement.classList.remove("is-loading");
+      setGone(true);
     };
 
-    animationFrameId = requestAnimationFrame(updateProgress);
-    return () => cancelAnimationFrame(animationFrameId);
+    const exit = () => {
+      exiting = true;
+      if (reduce) {
+        markIntroDone();
+        exitTimeline = gsap.timeline({ onComplete: finish }).to(root, { autoAlpha: 0, duration: 0.35, ease: "power1.out" });
+        return;
+      }
+      exitTimeline = gsap
+        .timeline({ onComplete: finish })
+        .to("[data-pl-count]", { yPercent: -110, duration: 0.7, ease: "power3.inOut" })
+        .to("[data-pl-meta]", { autoAlpha: 0, duration: 0.3, ease: "power1.out" }, 0)
+        .to(root, { clipPath: "inset(0% 0% 100% 0%)", duration: 1.1, ease: "power4.inOut" }, 0.35)
+        .call(markIntroDone, [], 0.75);
+    };
+
+    const loop = (now: number) => {
+      const elapsed = now - begin;
+      if (elapsed > MAX_WAIT_MS) target = 100;
+      shown += (target - shown) * 0.09;
+      if (target - shown < 0.4) shown = target;
+
+      if (countRef.current) countRef.current.textContent = String(Math.round(shown)).padStart(3, "0");
+      if (barRef.current) barRef.current.style.transform = `scaleX(${shown / 100})`;
+      if (tcRef.current) tcRef.current.textContent = toTimecode(elapsed / 1000);
+
+      if (!exiting && shown >= 100 && elapsed >= (reduce ? 200 : MIN_SHOW_MS)) exit();
+      if (!exiting) raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      offProgress();
+      exitTimeline?.kill();
+      document.documentElement.classList.remove("is-loading");
+    };
   }, []);
 
-  // Format progress strictly as 00% to 100%
-  const formattedProgress = progress.toString().padStart(2, "0");
+  if (gone) return null;
 
   return (
-    <AnimatePresence>
-      {isLoading && (
-        <motion.div
-          key="preloader"
-          exit={{ y: "-100vh", transition: { duration: 1, ease: [0.76, 0, 0.24, 1] } }}
-          className="fixed inset-0 z-[100] bg-[#050505] flex flex-col items-center justify-center text-white overflow-hidden"
-        >
-          {/* Metadata String */}
-          <div className="absolute top-[40%] flex justify-center w-full">
-            <p className="text-[10px] tracking-[0.3em] text-white/40 uppercase font-mono">
-              {loadingTexts[textIndex]}
-            </p>
-          </div>
-
-          {/* Massive Counter */}
-          <div className="font-sans font-black text-9xl md:text-[12rem] tracking-tighter tabular-nums z-10 text-white mt-12 leading-none">
-            {formattedProgress}%
-          </div>
-
-          {/* Background Ambient Glow for flair */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.03)_0%,transparent_70%)] pointer-events-none" />
-
-          {/* Razor-thin Loading Bar */}
-          <div 
-            className="absolute bottom-0 left-0 h-[2px] bg-white origin-left" 
-            style={{ width: `${progress}%`, transition: 'width 0.1s ease-out' }} 
+    <div
+      ref={rootRef}
+      data-preloader
+      role="status"
+      aria-live="polite"
+      aria-label="Loading the showreel"
+      className="fixed inset-0 z-[150] flex items-center justify-center bg-ink text-bone"
+      style={{ clipPath: "inset(0% 0% 0% 0%)" }}
+    >
+      {/* Academy-leader rings */}
+      <div data-pl-meta className="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden="true">
+        <div className="relative aspect-square w-[min(72vw,30rem)]">
+          <div className="absolute inset-0 rounded-full border border-bone/10" />
+          <div className="absolute inset-[12%] rounded-full border border-bone/[0.07]" />
+          <div className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-bone/[0.07]" />
+          <div className="absolute left-0 top-1/2 h-px w-full -translate-y-1/2 bg-bone/[0.07]" />
+          <div
+            className="absolute inset-0 animate-[spin_1.2s_linear_infinite] rounded-full motion-reduce:animate-none"
+            style={{
+              background: "conic-gradient(from 0deg, rgba(77,141,255,0.22), rgba(77,141,255,0) 22%, transparent 100%)",
+            }}
           />
-        </motion.div>
-      )}
-    </AnimatePresence>
+        </div>
+      </div>
+
+      <div className="relative overflow-hidden">
+        <span
+          ref={countRef}
+          data-pl-count
+          className="block font-display text-[clamp(7rem,26vw,19rem)] leading-[0.82] tabular-nums tracking-tight"
+        >
+          000
+        </span>
+      </div>
+
+      <div data-pl-meta className="absolute inset-x-0 top-0 flex justify-between p-[var(--gutter)] font-mono text-[10px] uppercase tracking-[0.22em] text-bone/50">
+        <span>Pranjay Rathore — Showreel</span>
+        <span>Reel 01 / {FRAME_COUNT} fr</span>
+      </div>
+
+      <div data-pl-meta className="absolute inset-x-0 bottom-0 flex items-end justify-between p-[var(--gutter)] pb-7 font-mono text-[10px] uppercase tracking-[0.22em] text-bone/50">
+        <span>
+          Loading frames <span ref={framesRef}>000/{FRAME_COUNT}</span>
+        </span>
+        <span>
+          TC <span ref={tcRef}>00:00:00:00</span>
+        </span>
+      </div>
+
+      <div ref={barRef} className="absolute bottom-0 left-0 h-[2px] w-full origin-left bg-flare" style={{ transform: "scaleX(0)" }} />
+    </div>
   );
 }
